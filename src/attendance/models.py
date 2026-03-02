@@ -18,6 +18,14 @@ class ShiftStatus(Enum):
     REJECTED = "rejected"  # 却下
 
 
+class ShiftType(Enum):
+    """シフトタイプ"""
+    MORNING = "morning"  # 午前
+    AFTERNOON = "afternoon"  # 午後
+    NIGHT = "night"  # 夜間
+    FULL_DAY = "full_day"  # 終日
+
+
 class AttendanceStatus(Enum):
     """勤怠状態"""
     PENDING = "pending"  # 未打刻
