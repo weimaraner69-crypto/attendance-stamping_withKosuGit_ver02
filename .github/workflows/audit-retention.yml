@@ -41,38 +41,72 @@ jobs:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
             - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-              with:
-                  python-version: "3.11"
+                with:
+                    python-version: "3.11"
 
             - uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
-              with:
-                  enable-cache: true
+                with:
+                    enable-cache: true
 
             - name: Sync dependencies
-              run: uv sync --all-extras --dev
+                run: uv sync --all-extras --dev
 
             - name: Run audit retention (dry-run)
-              if: env.DRY_RUN == 'true'
-              run: |
-                  uv run python scripts/run_audit_retention.py \
-                    --retention-days "${RETENTION_DAYS}" \
-                    --batch-size "${BATCH_SIZE}" \
-                                        --dry-run \
-                                        --output-path "${RESULT_PATH}"
+                if: env.DRY_RUN == 'true'
+                run: |
+                    uv run python scripts/run_audit_retention.py \
+                        --retention-days "${RETENTION_DAYS}" \
+                        --batch-size "${BATCH_SIZE}" \
+                        --dry-run \
+                        --output-path "${RESULT_PATH}"
 
             - name: Run audit retention
-              if: env.DRY_RUN != 'true'
-              run: |
-                  uv run python scripts/run_audit_retention.py \
-                    --retention-days "${RETENTION_DAYS}" \
-                                        --batch-size "${BATCH_SIZE}" \
-                                        --output-path "${RESULT_PATH}"
+                if: env.DRY_RUN != 'true'
+                run: |
+                    uv run python scripts/run_audit_retention.py \
+                        --retention-days "${RETENTION_DAYS}" \
+                        --batch-size "${BATCH_SIZE}" \
+                        --output-path "${RESULT_PATH}"
 
-                        - name: Upload retention result artifact
-                            if: always()
-                            uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-                            with:
-                                    name: audit-retention-result-${{ github.run_id }}
-                                    path: ${{ env.RESULT_PATH }}
-                                    if-no-files-found: warn
-                                    retention-days: 90
+            - name: Write retention summary
+                if: always()
+                run: |
+                    python - <<'PY'
+                    import json
+                    import os
+                    from pathlib import Path
+
+                    result_path = Path(os.environ["RESULT_PATH"])
+                    summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+
+                    if not result_path.exists():
+                            summary_path.write_text(
+                                    "## Audit Retention\n\n結果ファイルが見つからないため、詳細はログを確認してください。\n",
+                                    encoding="utf-8",
+                            )
+                    else:
+                            data = json.loads(result_path.read_text(encoding="utf-8"))
+                            summary = "\n".join(
+                                    [
+                                            "## Audit Retention",
+                                            "",
+                                            f"- executed_at: {data.get('executed_at')}",
+                                            f"- cutoff: {data.get('cutoff')}",
+                                            f"- retention_days: {data.get('retention_days')}",
+                                            f"- batch_size: {data.get('batch_size')}",
+                                            f"- dry_run: {data.get('dry_run')}",
+                                            f"- target_count: {data.get('target_count')}",
+                                            f"- deleted_count: {data.get('deleted_count')}",
+                                    ]
+                            )
+                            summary_path.write_text(summary + "\n", encoding="utf-8")
+                    PY
+
+            - name: Upload retention result artifact
+                if: always()
+                uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+                with:
+                    name: audit-retention-result-${{ github.run_id }}
+                    path: ${{ env.RESULT_PATH }}
+                    if-no-files-found: warn
+                    retention-days: 90

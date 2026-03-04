@@ -73,10 +73,12 @@ uv run python scripts/run_audit_retention.py --retention-days 30 --batch-size 50
 - `AUDIT_RETENTION_BATCH_SIZE`（未設定時は `500`）
 
 実行結果JSONは Artifact（`audit-retention-result-<run_id>`）として保存され、実行日時・cutoff・対象件数・削除件数を確認できる。
+Actions の Step Summary にも主要値（retention_days / dry_run / target_count / deleted_count）が出力される。
 
 ### 5. 事後チェック項目（承認用）
 
 1. Actions の `Audit Retention` 実行が成功していること
+1. Actions の Step Summary に主要値が出力されていること
 1. Artifact `audit-retention-result-<run_id>` が保存されていること
 1. JSON内の `retention_days` / `batch_size` / `dry_run` が想定値であること
 1. JSON内の `target_count` と `deleted_count` が運用想定と乖離していないこと
