@@ -426,17 +426,17 @@
 <a id="spec-14"></a>
 ### 14. 今週着手する優先3件（推奨）
 
-- 優先1: SEC-009 エクスポートAPI権限制御
-	- 理由: 監査ログ基盤は整備済みのため、機微データ流出リスクを先に下げる。
+- 優先1: SEC-011 セキュリティテスト整備
+	- 理由: 主要防御機能の回帰テストが揃ったため、CI運用観点の整備を優先する。
 
-- 優先2: SEC-011 セキュリティテスト整備
-	- 理由: 既存防御機能（認証/RBAC/CSRF/監査/ログイン保護）の退行検知をCIで担保する。
+- 優先2: SEC-003 共通エラーハンドラ実装
+	- 理由: 利用者向けエラー一般化と内部ログ分離を共通化し、漏えいリスクを抑える。
 
-- 優先3: SEC-003 共通エラーハンドラ実装
-	- 理由: 利用者向けエラーの一般化と内部ログ分離を共通化し、情報漏えいリスクを抑える。
+- 優先3: SEC-010 セキュリティヘッダー/CSP段階導入
+	- 理由: ブラウザ側防御を強化し、運用初期の脆弱性露出を抑える。
 
 - 今週対象外（次週候補）
-	- SEC-010（セキュリティヘッダー/CSP段階導入）
+	- SEC-006（入力検証・サニタイズ強化）
 
 #### 実装進捗（2026年3月5日時点）
 
@@ -484,12 +484,18 @@
 	- 次アクション:
 		- 実フレームワーク導入時にプロセス間共有ストア（Redis 等）へ状態を移行する
 
-- SEC-009 エクスポートAPI権限制御: 着手中
+- SEC-009 エクスポートAPI権限制御: 完了（現行構成）
 	- 状態: 売上エクスポートAPIでロール別データセット制約を実装し、禁止データセットを `403` で拒否
 	- 反映: `export_sales_data`（`src/business/api.py`）で `datasets` を検証し、税理士ロールの許可範囲を強制
 	- 追加: データセット制約テスト（`tests/test_business_api.py`）
 	- 次アクション:
 		- 実データソース接続時にデータセット定義をドメインモデルへ昇格し、共通ポリシー化する
+
+- SEC-011 セキュリティテスト整備: 完了（現行構成）
+	- 状態: 主要防御機能（401/403/CSRF/Cookie属性/ログインロック/監査マスキング）の回帰テストを追加
+	- 追加: `tests/test_security_regression.py`
+	- 次アクション:
+		- CIでセキュリティ回帰テスト群を明示ジョブ化し、失敗時通知を運用へ連携する
 
 - API接続テンプレート（SEC-004/005 の適用例）: 完了
 	- 追加: `src/shared/api_auth.py`, `tests/test_api_auth.py`
@@ -514,6 +520,7 @@
 	- SEC-007対象ID連携・永続化反映後の回帰: `./.venv/bin/python -m pytest tests/test_api_handlers.py tests/test_business_api.py tests/test_attendance_api.py tests/test_audit.py tests/test_csrf.py` → 55 passed
 	- SEC-008ログイン保護追加後の回帰: `./.venv/bin/python -m pytest tests/test_login_protection.py tests/test_auth_endpoints.py` → 14 passed
 	- SEC-009データセット制約追加後の回帰: `./.venv/bin/python -m pytest tests/test_business_api.py` → 23 passed
+	- SEC-011セキュリティ回帰テスト追加後の回帰: `./.venv/bin/python -m pytest tests/test_security_regression.py` → 6 passed
 
 #### Issue本文ドラフト（そのまま起票可）
 
