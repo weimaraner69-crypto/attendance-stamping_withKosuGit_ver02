@@ -40,7 +40,9 @@ def test_get_security_runtime_config_環境変数上書き(monkeypatch: pytest.M
     assert config.key_rotation_days == 30
 
 
-def test_get_security_runtime_config_same_site不正値でエラー(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_security_runtime_config_same_site不正値でエラー(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """SameSite が不正値ならエラー。"""
     monkeypatch.setenv("COOKIE_SAMESITE", "Invalid")
 
@@ -48,7 +50,9 @@ def test_get_security_runtime_config_same_site不正値でエラー(monkeypatch:
         get_security_runtime_config()
 
 
-def test_get_security_runtime_config_oauth_path不正でエラー(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_security_runtime_config_oauth_path不正でエラー(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """OAuth パスが '/' で始まらない場合はエラー。"""
     monkeypatch.setenv("OAUTH_CALLBACK_PATHS", "auth/google/callback")
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING
 
 from shared.api_handlers import ApiResponse
 from shared.auth import GENERIC_AUTH_ERROR_MESSAGE
@@ -13,6 +13,9 @@ from shared.session import (
     is_https_request,
     is_oauth_callback_path,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 
 def login_with_password(

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from attendance.api import (
     ATTENDANCE_SUMMARY_ENDPOINT_SPEC,
@@ -12,6 +11,9 @@ from attendance.api import (
 )
 from shared.audit import InMemoryAuditLogWriter
 from shared.auth import AuthContext
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TestAttendanceApi:

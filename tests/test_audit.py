@@ -112,7 +112,7 @@ def test_write_audit_log_sqlalchemyライタへ永続化() -> None:
     assert row.action == "update"
     assert row.result == "success"
     assert row.target_resource_id == "report-001"
-    assert json.loads(cast(str, row.metadata_json)) == {"safe_key": "safe-value"}
+    assert json.loads(cast("str", row.metadata_json)) == {"safe_key": "safe-value"}
 
 
 def test_sqlalchemy_audit_writer_auto_commit_falseでもflushされる() -> None:

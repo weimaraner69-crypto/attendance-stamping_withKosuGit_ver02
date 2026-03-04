@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from shared.exceptions import AuthenticationError
 
-
 GENERIC_AUTH_ERROR_MESSAGE = "ユーザー名またはパスワードが正しくありません"
 
 

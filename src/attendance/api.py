@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from shared.api_handlers import ApiResponse, execute_authorized_action
-from shared.audit import AuditLogWriter
-from shared.auth import AuthContext
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from shared.audit import AuditLogWriter
+    from shared.auth import AuthContext
 
 ATTENDANCE_SUMMARY_ENDPOINT_SPEC: dict[str, Any] = {
     "path": "/attendance/summary",

@@ -38,7 +38,10 @@ class TestAuthenticationGuard:
 
     def test_require_authenticated_user_未認証でエラー(self) -> None:
         """認証コンテキストがない場合はエラー。"""
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             require_authenticated_user(None)
 
     def test_require_authenticated_user_認証済みは通過(self) -> None:
@@ -53,7 +56,10 @@ class TestAuthenticationGuard:
         """無効化ユーザーはエラー。"""
         context = AuthContext(user_id="user_001", role="manager", is_active=False)
 
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             ensure_active_user(context)
 
     def test_ensure_active_user_有効ユーザーは通過(self) -> None:
@@ -66,14 +72,20 @@ class TestAuthenticationGuard:
 
     def test_require_active_authenticated_user_未認証でエラー(self) -> None:
         """未認証ユーザーはエラー。"""
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             require_active_authenticated_user(None)
 
     def test_require_active_authenticated_user_無効化ユーザーでエラー(self) -> None:
         """無効化ユーザーはエラー。"""
         context = AuthContext(user_id="user_001", role="manager", is_active=False)
 
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             require_active_authenticated_user(context)
 
     def test_require_active_authenticated_user_有効ユーザーは通過(self) -> None:

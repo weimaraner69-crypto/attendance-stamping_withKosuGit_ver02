@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from shared.auth import AuthContext, require_active_authenticated_user
 from shared.exceptions import AuthorizationError
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 AUTHORIZATION_ERROR_MESSAGE = "この操作を実行する権限がありません"
 

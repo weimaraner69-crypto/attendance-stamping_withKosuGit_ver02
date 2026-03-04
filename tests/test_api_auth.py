@@ -22,7 +22,10 @@ class TestAuthorizeApiRequest:
 
     def test_authorize_api_request_未認証は認証エラー(self) -> None:
         """未認証は AuthenticationError。"""
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             authorize_api_request(None, resource="sales", action="read")
 
     def test_authorize_api_request_権限不足は認可エラー(self) -> None:

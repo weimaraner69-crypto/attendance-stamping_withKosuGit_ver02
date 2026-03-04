@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from shared.api_handlers import ApiResponse, execute_authorized_mutation
-from shared.audit import AuditLogWriter
-from shared.auth import AuthContext
 from shared.csrf import create_csrf_token
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from shared.audit import AuditLogWriter
+    from shared.auth import AuthContext
 
 EXPORT_SALES_DATA_ENDPOINT_SPEC: dict[str, Any] = {
     "path": "/business/sales/export",

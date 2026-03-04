@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import secrets
-from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from shared.security_config import SecurityRuntimeConfig, get_security_runtime_config
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 SESSION_COOKIE_NAME = "session_id"
 

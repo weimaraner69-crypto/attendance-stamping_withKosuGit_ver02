@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from shared.api_auth import authorize_api_request, to_api_error_response
 from shared.audit import AuditLogWriter, write_audit_log
-from shared.auth import AuthContext
 from shared.csrf import validate_csrf_tokens
-from shared.session import SessionCookie
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from shared.auth import AuthContext
+    from shared.session import SessionCookie
 
 
 @dataclass(frozen=True)

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from shared.auth import AuthContext
 from shared.exceptions import AuthenticationError, AuthorizationError
 from shared.rbac import require_permission
+
+if TYPE_CHECKING:
+    from shared.auth import AuthContext
 
 
 @dataclass(frozen=True)

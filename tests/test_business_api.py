@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from business.api import (
     DELETE_DAILY_REPORT_ENDPOINT_SPEC,
@@ -22,6 +21,9 @@ from business.api import (
 from shared.audit import InMemoryAuditLogWriter
 from shared.auth import AuthContext
 from shared.csrf import create_csrf_token
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TestBusinessApi:

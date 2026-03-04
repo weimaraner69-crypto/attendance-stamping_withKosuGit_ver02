@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from sqlalchemy.orm import Session  # noqa: TC002
 
 from shared.tables import AuditLogTable
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 PII_RELATED_KEYS = {
     "name",
@@ -36,7 +37,9 @@ class AuditLogEntry:
     resource: str
     action: str
     result: str
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    occurred_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc),  # noqa: UP017
+    )
     target_resource_id: str | None = None
     error_type: str | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)

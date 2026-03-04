@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from shared.api_handlers import (
     execute_authorized_action,
@@ -14,6 +13,9 @@ from shared.api_handlers import (
 from shared.audit import InMemoryAuditLogWriter
 from shared.auth import AuthContext
 from shared.csrf import create_csrf_token
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TestSampleHandlers:

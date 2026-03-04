@@ -6,7 +6,6 @@ import secrets
 
 from shared.exceptions import AuthorizationError
 
-
 CSRF_HEADER_NAME = "X-CSRF-Token"
 CSRF_COOKIE_NAME = "csrf_token"
 GENERIC_CSRF_ERROR_MESSAGE = "不正なリクエストです"

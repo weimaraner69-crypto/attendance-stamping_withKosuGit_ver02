@@ -59,14 +59,20 @@ class TestRequirePermission:
 
     def test_未認証は認証エラー(self) -> None:
         """未認証コンテキストは AuthenticationError。"""
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             require_permission(None, resource="sales", action="read")
 
     def test_無効化ユーザーは認証エラー(self) -> None:
         """無効化ユーザーは AuthenticationError。"""
         context = AuthContext(user_id="u001", role="manager", is_active=False)
 
-        with pytest.raises(AuthenticationError, match="ユーザー名またはパスワードが正しくありません"):
+        with pytest.raises(
+            AuthenticationError,
+            match="ユーザー名またはパスワードが正しくありません",
+        ):
             require_permission(context, resource="sales", action="read")
 
     def test_権限不足は認可エラー(self) -> None:
