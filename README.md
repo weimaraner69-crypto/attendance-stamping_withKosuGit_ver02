@@ -438,7 +438,7 @@
 - 今週対象外（次週候補）
 	- SEC-011（セキュリティテスト整備）
 
-#### 実装進捗（2026年3月4日時点）
+#### 実装進捗（2026年3月5日時点）
 
 - SEC-004 認証ミドルウェアと無効化アカウント遮断: 完了
 	- 追加: `src/shared/auth.py`, `tests/test_auth.py`
@@ -448,17 +448,16 @@
 	- 追加: `src/shared/rbac.py`, `tests/test_rbac.py`
 	- 内容: 管理者/店長/社労士/税理士ロールの認可境界を実装
 
-- SEC-001 HTTPS強制とCookie属性統一（フロント）: 着手中
-	- 状態: SEC-001設定雛形・セッション発行共通処理・疑似ログインエンドポイントまで実装済み
+- SEC-001 HTTPS強制とCookie属性統一（フロント）: 完了（現行構成）
+	- 状態: HTTPS判定（`X-Forwarded-Proto` 対応）・セッションCookie属性（`Secure` / `HttpOnly` / `SameSite`）統一・疑似ログイン接続まで実装済み
 	- 次アクション:
-		- HTTP→HTTPS リダイレクト設定
-		- 認証Cookieに `Secure=True` / `HttpOnly=True` / `SameSite=Lax` を適用
-		- Web Storage（localStorage / sessionStorage）への認証トークン保存禁止を実装
+		- 実フレームワーク導入時にHTTP→HTTPSリダイレクトをミドルウェアで統合する
+		- Web Storage（localStorage / sessionStorage）への認証トークン保存禁止をフロント実装へ適用する
 	- 追加: `src/shared/security_config.py`, `tests/test_security_config.py`
 	- 追加: `src/shared/session.py`, `tests/test_session.py`
 	- 追加: `src/shared/auth_endpoints.py`, `tests/test_auth_endpoints.py`
 
-- SEC-002 CSRF防御導入（フォーム/API共通）: 着手中
+- SEC-002 CSRF防御導入（フォーム/API共通）: 完了（現行構成）
 	- 状態: CSRFトークン生成・検証ロジックを実装し、更新系疑似エンドポイントへ接続済み
 	- 追加: `src/shared/csrf.py`, `tests/test_csrf.py`
 	- 追加: `execute_authorized_mutation`（`src/shared/api_handlers.py`）
