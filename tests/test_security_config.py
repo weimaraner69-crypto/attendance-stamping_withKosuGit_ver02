@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from shared.security_config import get_security_runtime_config
+from shared.security_config import build_security_headers, get_security_runtime_config
 
 
 def test_get_security_runtime_config_デフォルト値() -> None:
@@ -17,8 +17,21 @@ def test_get_security_runtime_config_デフォルト値() -> None:
     assert config.cookie.same_site == "Lax"
     assert config.cookie.session_ttl_seconds == 12 * 60 * 60
     assert config.cookie.idle_timeout_seconds == 120 * 60
+    assert config.security_headers.x_content_type_options == "nosniff"
+    assert config.security_headers.x_frame_options == "DENY"
+    assert config.security_headers.referrer_policy == "strict-origin-when-cross-origin"
+    assert config.security_headers.csp_report_only_enabled is True
+    assert config.security_headers.csp_report_uri == "/csp-report"
     assert config.oauth_callback_paths == ("/auth/google/callback", "/auth/line/callback")
     assert config.key_rotation_days == 90
+
+    headers = build_security_headers(config)
+
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["X-Frame-Options"] == "DENY"
+    assert headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+    assert "Content-Security-Policy-Report-Only" in headers
+    assert "report-uri /csp-report" in headers["Content-Security-Policy-Report-Only"]
 
 
 def test_get_security_runtime_config_環境変数上書き(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -29,6 +42,9 @@ def test_get_security_runtime_config_環境変数上書き(monkeypatch: pytest.M
     monkeypatch.setenv("COOKIE_SAMESITE", "Strict")
     monkeypatch.setenv("SESSION_TTL_HOURS", "8")
     monkeypatch.setenv("IDLE_TIMEOUT_MINUTES", "60")
+    monkeypatch.setenv("SECURITY_HEADER_X_FRAME_OPTIONS", "SAMEORIGIN")
+    monkeypatch.setenv("SECURITY_HEADER_REFERRER_POLICY", "no-referrer")
+    monkeypatch.setenv("CSP_REPORT_ONLY_ENABLED", "false")
     monkeypatch.setenv("OAUTH_CALLBACK_PATHS", "/auth/google/callback,/auth/line/callback")
     monkeypatch.setenv("KEY_ROTATION_DAYS", "30")
 
@@ -37,7 +53,16 @@ def test_get_security_runtime_config_環境変数上書き(monkeypatch: pytest.M
     assert config.cookie.same_site == "Strict"
     assert config.cookie.session_ttl_seconds == 8 * 60 * 60
     assert config.cookie.idle_timeout_seconds == 60 * 60
+    assert config.security_headers.x_frame_options == "SAMEORIGIN"
+    assert config.security_headers.referrer_policy == "no-referrer"
+    assert config.security_headers.csp_report_only_enabled is False
     assert config.key_rotation_days == 30
+
+    headers = build_security_headers(config)
+
+    assert headers["X-Frame-Options"] == "SAMEORIGIN"
+    assert headers["Referrer-Policy"] == "no-referrer"
+    assert "Content-Security-Policy-Report-Only" not in headers
 
 
 def test_get_security_runtime_config_same_site不正値でエラー(
@@ -47,6 +72,26 @@ def test_get_security_runtime_config_same_site不正値でエラー(
     monkeypatch.setenv("COOKIE_SAMESITE", "Invalid")
 
     with pytest.raises(ValueError, match="COOKIE_SAMESITE"):
+        get_security_runtime_config()
+
+
+def test_get_security_runtime_config_x_frame_options不正値でエラー(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """X-Frame-Options が不正値ならエラー。"""
+    monkeypatch.setenv("SECURITY_HEADER_X_FRAME_OPTIONS", "ALLOWALL")
+
+    with pytest.raises(ValueError, match="SECURITY_HEADER_X_FRAME_OPTIONS"):
+        get_security_runtime_config()
+
+
+def test_get_security_runtime_config_referrer_policy不正値でエラー(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Referrer-Policy が不正値ならエラー。"""
+    monkeypatch.setenv("SECURITY_HEADER_REFERRER_POLICY", "invalid-policy")
+
+    with pytest.raises(ValueError, match="SECURITY_HEADER_REFERRER_POLICY"):
         get_security_runtime_config()
 
 
