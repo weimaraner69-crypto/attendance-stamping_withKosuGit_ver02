@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from shared.api_auth import authorize_api_request, to_api_error_response
 from shared.audit import AuditLogWriter, write_audit_log
 from shared.csrf import validate_csrf_tokens
+from shared.error_handling import log_internal_error
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -87,6 +88,14 @@ def execute_authorized_action(
         )
         return ApiResponse(status_code=200, body={"ok": True, "data": result})
     except Exception as error:
+        log_internal_error(
+            error,
+            context={
+                "resource": resource,
+                "action": action,
+                "actor_user_id": context.user_id if context is not None else "anonymous",
+            },
+        )
         api_error = to_api_error_response(error)
         write_audit_log(
             writer=audit_log_writer,
@@ -134,6 +143,14 @@ def execute_authorized_mutation(
             target_resource_id_getter=target_resource_id_getter,
         )
     except Exception as error:
+        log_internal_error(
+            error,
+            context={
+                "resource": resource,
+                "action": action,
+                "actor_user_id": context.user_id if context is not None else "anonymous",
+            },
+        )
         api_error = to_api_error_response(error)
         write_audit_log(
             writer=audit_log_writer,

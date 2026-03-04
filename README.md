@@ -497,6 +497,14 @@
 	- 次アクション:
 		- CIでセキュリティ回帰テスト群を明示ジョブ化し、失敗時通知を運用へ連携する
 
+- SEC-003 共通エラーハンドラ実装: 完了（現行構成）
+	- 状態: 利用者向け一般化メッセージと内部ログ向け詳細分離、機微情報マスキングを共通化
+	- 追加: `src/shared/error_handling.py`, `tests/test_error_handling.py`
+	- 反映: `to_api_error_response`（`src/shared/api_auth.py`）で `ValidationError` を `400` に変換
+	- 反映: `execute_authorized_action` / `execute_authorized_mutation`（`src/shared/api_handlers.py`）で内部エラーログ共通化
+	- 次アクション:
+		- 実フレームワーク導入時に共通例外ミドルウェアへ接続し、同一方針をHTTP層全体へ適用する
+
 - API接続テンプレート（SEC-004/005 の適用例）: 完了
 	- 追加: `src/shared/api_auth.py`, `tests/test_api_auth.py`
 	- 追加: `src/shared/api_handlers.py`, `tests/test_api_handlers.py`
@@ -521,6 +529,7 @@
 	- SEC-008ログイン保護追加後の回帰: `./.venv/bin/python -m pytest tests/test_login_protection.py tests/test_auth_endpoints.py` → 14 passed
 	- SEC-009データセット制約追加後の回帰: `./.venv/bin/python -m pytest tests/test_business_api.py` → 23 passed
 	- SEC-011セキュリティ回帰テスト追加後の回帰: `./.venv/bin/python -m pytest tests/test_security_regression.py` → 6 passed
+	- SEC-003共通エラーハンドラ追加後の回帰: `./.venv/bin/python -m pytest tests/test_error_handling.py tests/test_api_auth.py tests/test_api_handlers.py` → 24 passed
 
 #### Issue本文ドラフト（そのまま起票可）
 

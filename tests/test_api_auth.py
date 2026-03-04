@@ -6,7 +6,7 @@ import pytest
 
 from shared.api_auth import authorize_api_request, to_api_error_response
 from shared.auth import AuthContext
-from shared.exceptions import AuthenticationError, AuthorizationError
+from shared.exceptions import AuthenticationError, AuthorizationError, ValidationError
 
 
 class TestAuthorizeApiRequest:
@@ -63,3 +63,10 @@ class TestToApiErrorResponse:
 
         assert response.status_code == 500
         assert response.message == "処理に失敗しました。時間をおいて再度お試しください"
+
+    def test_to_api_error_response_バリデーションエラーを400に変換(self) -> None:
+        """ValidationError を 400 に変換する。"""
+        response = to_api_error_response(ValidationError("invalid input"))
+
+        assert response.status_code == 400
+        assert response.message == "入力内容を確認してください"

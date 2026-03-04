@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from shared.exceptions import AuthenticationError, AuthorizationError
+from shared.error_handling import (
+    PUBLIC_INTERNAL_ERROR_MESSAGE,
+    PUBLIC_VALIDATION_ERROR_MESSAGE,
+)
+from shared.exceptions import AuthenticationError, AuthorizationError, ValidationError
 from shared.rbac import require_permission
 
 if TYPE_CHECKING:
@@ -38,7 +42,10 @@ def to_api_error_response(error: Exception) -> ApiErrorResponse:
     if isinstance(error, AuthorizationError):
         return ApiErrorResponse(status_code=403, message=str(error))
 
+    if isinstance(error, ValidationError):
+        return ApiErrorResponse(status_code=400, message=PUBLIC_VALIDATION_ERROR_MESSAGE)
+
     return ApiErrorResponse(
         status_code=500,
-        message="処理に失敗しました。時間をおいて再度お試しください",
+        message=PUBLIC_INTERNAL_ERROR_MESSAGE,
     )

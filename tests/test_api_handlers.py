@@ -13,6 +13,7 @@ from shared.api_handlers import (
 from shared.audit import InMemoryAuditLogWriter
 from shared.auth import AuthContext
 from shared.csrf import create_csrf_token
+from shared.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -97,6 +98,25 @@ class TestExecuteAuthorizedAction:
         assert response.status_code == 500
         assert response.body["ok"] is False
         assert response.body["error"] == "処理に失敗しました。時間をおいて再度お試しください"
+
+    def test_execute_authorized_action_バリデーションエラーは400一般化(self) -> None:
+        """ValidationError は一般化メッセージ付き400で返る。"""
+
+        def operation(_: AuthContext) -> Mapping[str, Any]:
+            raise ValidationError("input is invalid")
+
+        context = AuthContext(user_id="user_001", role="admin", is_active=True)
+
+        response = execute_authorized_action(
+            context,
+            resource="sales",
+            action="read",
+            operation=operation,
+        )
+
+        assert response.status_code == 400
+        assert response.body["ok"] is False
+        assert response.body["error"] == "入力内容を確認してください"
 
     def test_execute_authorized_action_成功時に監査ログ記録(self) -> None:
         """成功時は監査ログへ success を記録する。"""
