@@ -17,6 +17,10 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
 ]
+web = [
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+]
 
 [build-system]
 requires = ["hatchling"]
