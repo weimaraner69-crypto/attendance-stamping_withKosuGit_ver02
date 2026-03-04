@@ -110,6 +110,20 @@ def test_calculate_labor_cost_負の値でエラー() -> None:
 - **目標**: 80% 以上
 - **確認方法**: `pytest --cov=src --cov-report=html`
 
+## API仕様参照
+
+OpenAPI相当のAPI仕様は、READMEとコード内の仕様定数を同期して管理する。
+
+- 仕様の説明（ドキュメント）
+    - `README.md` の「18. APIレスポンス仕様（OpenAPI相当）」を参照する
+- 仕様の実体（コード）
+    - 勤怠サマリー取得: `src/attendance/api.py` の `ATTENDANCE_SUMMARY_ENDPOINT_SPEC`
+    - 売上データエクスポート: `src/business/api.py` の `EXPORT_SALES_DATA_ENDPOINT_SPEC`
+- 仕様変更時の運用ルール
+    - 仕様定数とREADMEを同一PRで更新する
+    - 仕様定数の必須項目テストを更新し、退行を防ぐ
+    - 対象テスト: `tests/test_attendance_api.py`, `tests/test_business_api.py`
+
 ## CI/CD
 
 GitHub Actions を使用した自動チェック：
