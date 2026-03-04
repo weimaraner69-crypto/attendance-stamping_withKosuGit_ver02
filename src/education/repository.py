@@ -35,9 +35,7 @@ class LearningContentRepository(Repository[LearningContentTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.content_id == content_id
-        )
+        stmt = select(self._table_class).where(self._table_class.content_id == content_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_category(self, category: str) -> list[LearningContentTable]:
@@ -49,9 +47,7 @@ class LearningContentRepository(Repository[LearningContentTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.category == category
-        )
+        stmt = select(self._table_class).where(self._table_class.category == category)
         return list(self._session.execute(stmt).scalars().all())
 
     def list_active(self) -> list[LearningContentTable]:
@@ -60,9 +56,7 @@ class LearningContentRepository(Repository[LearningContentTable]):
         Returns:
             アクティブなレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.is_active == 1
-        )
+        stmt = select(self._table_class).where(self._table_class.is_active == 1)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, content_id: str) -> bool:
@@ -105,9 +99,7 @@ class LearningProgressRepository(Repository[LearningProgressTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.progress_id == progress_id
-        )
+        stmt = select(self._table_class).where(self._table_class.progress_id == progress_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_employee(self, employee_id: str) -> list[LearningProgressTable]:
@@ -119,9 +111,7 @@ class LearningProgressRepository(Repository[LearningProgressTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.employee_id == employee_id
-        )
+        stmt = select(self._table_class).where(self._table_class.employee_id == employee_id)
         return list(self._session.execute(stmt).scalars().all())
 
     def list_by_status(self, status: ProgressStatus) -> list[LearningProgressTable]:
@@ -133,9 +123,7 @@ class LearningProgressRepository(Repository[LearningProgressTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.status == status
-        )
+        stmt = select(self._table_class).where(self._table_class.status == status)
         return list(self._session.execute(stmt).scalars().all())
 
     def list_by_content(self, content_id: str) -> list[LearningProgressTable]:
@@ -147,9 +135,7 @@ class LearningProgressRepository(Repository[LearningProgressTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.content_id == content_id
-        )
+        stmt = select(self._table_class).where(self._table_class.content_id == content_id)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, progress_id: str) -> bool:

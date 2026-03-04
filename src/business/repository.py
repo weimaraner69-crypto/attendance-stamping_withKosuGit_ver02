@@ -35,9 +35,7 @@ class DailyReportRepository(Repository[DailyReportTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.report_id == report_id
-        )
+        stmt = select(self._table_class).where(self._table_class.report_id == report_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_employee(self, employee_id: str) -> list[DailyReportTable]:
@@ -49,9 +47,7 @@ class DailyReportRepository(Repository[DailyReportTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.employee_id == employee_id
-        )
+        stmt = select(self._table_class).where(self._table_class.employee_id == employee_id)
         return list(self._session.execute(stmt).scalars().all())
 
     def list_by_status(self, status: ReportStatus) -> list[DailyReportTable]:
@@ -63,9 +59,7 @@ class DailyReportRepository(Repository[DailyReportTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.status == status
-        )
+        stmt = select(self._table_class).where(self._table_class.status == status)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, report_id: str) -> bool:
@@ -108,9 +102,7 @@ class SalesRecordRepository(Repository[SalesRecordTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.record_id == record_id
-        )
+        stmt = select(self._table_class).where(self._table_class.record_id == record_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def delete(self, record_id: str) -> bool:
@@ -153,9 +145,7 @@ class LaborCostRepository(Repository[LaborCostTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.labor_cost_id == labor_cost_id
-        )
+        stmt = select(self._table_class).where(self._table_class.labor_cost_id == labor_cost_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_employee(self, employee_id: str) -> list[LaborCostTable]:
@@ -167,9 +157,7 @@ class LaborCostRepository(Repository[LaborCostTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.employee_id == employee_id
-        )
+        stmt = select(self._table_class).where(self._table_class.employee_id == employee_id)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, labor_cost_id: str) -> bool:

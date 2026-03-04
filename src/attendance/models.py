@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 class ShiftStatus(Enum):
     """シフト状態"""
+
     DRAFT = "draft"  # 下書き
     SUBMITTED = "submitted"  # 提出済み
     APPROVED = "approved"  # 承認済み
@@ -20,6 +21,7 @@ class ShiftStatus(Enum):
 
 class ShiftType(Enum):
     """シフトタイプ"""
+
     MORNING = "morning"  # 午前
     AFTERNOON = "afternoon"  # 午後
     NIGHT = "night"  # 夜間
@@ -28,6 +30,7 @@ class ShiftType(Enum):
 
 class AttendanceStatus(Enum):
     """勤怠状態"""
+
     PENDING = "pending"  # 未打刻
     CLOCKED_IN = "clocked_in"  # 出勤済み
     CLOCKED_OUT = "clocked_out"  # 退勤済み
@@ -37,6 +40,7 @@ class AttendanceStatus(Enum):
 @dataclass(frozen=True)
 class Shift:
     """シフト情報"""
+
     employee_id: str
     date: datetime
     start_time: datetime
@@ -55,6 +59,7 @@ class Shift:
 @dataclass(frozen=True)
 class AttendanceRecord:
     """勤怠記録"""
+
     employee_id: str
     date: datetime
     clock_in: datetime | None

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 class ContentType(Enum):
     """学習コンテンツ種別"""
+
     VIDEO = "video"  # 動画
     QUIZ = "quiz"  # クイズ
     READING = "reading"  # 読み物
@@ -20,6 +21,7 @@ class ContentType(Enum):
 
 class ProgressStatus(Enum):
     """学習進捗状態"""
+
     NOT_STARTED = "not_started"  # 未開始
     IN_PROGRESS = "in_progress"  # 学習中
     COMPLETED = "completed"  # 完了
@@ -28,6 +30,7 @@ class ProgressStatus(Enum):
 @dataclass(frozen=True)
 class LearningContent:
     """学習コンテンツ"""
+
     content_id: str
     title: str
     content_type: ContentType
@@ -50,6 +53,7 @@ class LearningContent:
 @dataclass(frozen=True)
 class LearningProgress:
     """学習進捗"""
+
     student_id: str
     content_id: str
     status: ProgressStatus

@@ -166,8 +166,7 @@ class HttpAuditLogWriter:
         if not self.endpoint_url:
             raise ValueError("endpoint_url は必須です")
         if not (
-            self.endpoint_url.startswith("https://")
-            or self.endpoint_url.startswith("http://")
+            self.endpoint_url.startswith("https://") or self.endpoint_url.startswith("http://")
         ):
             raise ValueError("endpoint_url は http:// または https:// で始まる必要があります")
         if self.timeout_seconds <= 0:

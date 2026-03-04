@@ -35,9 +35,7 @@ class AttendanceRecordRepository(Repository[AttendanceRecordTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.record_id == record_id
-        )
+        stmt = select(self._table_class).where(self._table_class.record_id == record_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_employee(self, employee_id: str) -> list[AttendanceRecordTable]:
@@ -49,14 +47,10 @@ class AttendanceRecordRepository(Repository[AttendanceRecordTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.employee_id == employee_id
-        )
+        stmt = select(self._table_class).where(self._table_class.employee_id == employee_id)
         return list(self._session.execute(stmt).scalars().all())
 
-    def list_by_status(
-        self, status: AttendanceStatus
-    ) -> list[AttendanceRecordTable]:
+    def list_by_status(self, status: AttendanceStatus) -> list[AttendanceRecordTable]:
         """ステータスで検索。
 
         Args:
@@ -65,9 +59,7 @@ class AttendanceRecordRepository(Repository[AttendanceRecordTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.status == status
-        )
+        stmt = select(self._table_class).where(self._table_class.status == status)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, record_id: str) -> bool:
@@ -110,9 +102,7 @@ class ShiftScheduleRepository(Repository[ShiftScheduleTable]):
         Returns:
             見つかったレコード、なければ None
         """
-        stmt = select(self._table_class).where(
-            self._table_class.shift_id == shift_id
-        )
+        stmt = select(self._table_class).where(self._table_class.shift_id == shift_id)
         return self._session.execute(stmt).scalar_one_or_none()
 
     def list_by_employee(self, employee_id: str) -> list[ShiftScheduleTable]:
@@ -124,9 +114,7 @@ class ShiftScheduleRepository(Repository[ShiftScheduleTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.employee_id == employee_id
-        )
+        stmt = select(self._table_class).where(self._table_class.employee_id == employee_id)
         return list(self._session.execute(stmt).scalars().all())
 
     def list_by_shift_type(self, shift_type: ShiftType) -> list[ShiftScheduleTable]:
@@ -138,9 +126,7 @@ class ShiftScheduleRepository(Repository[ShiftScheduleTable]):
         Returns:
             マッチしたレコード一覧
         """
-        stmt = select(self._table_class).where(
-            self._table_class.shift_type == shift_type
-        )
+        stmt = select(self._table_class).where(self._table_class.shift_type == shift_type)
         return list(self._session.execute(stmt).scalars().all())
 
     def delete(self, shift_id: str) -> bool:

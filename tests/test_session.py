@@ -56,18 +56,24 @@ def test_is_https_request_スキームhttpsは真() -> None:
 
 def test_is_https_request_forwarded_protoを信頼して真() -> None:
     """X-Forwarded-Proto が https なら真。"""
-    assert is_https_request(
-        request_scheme="http",
-        headers={"X-Forwarded-Proto": "https"},
-    ) is True
+    assert (
+        is_https_request(
+            request_scheme="http",
+            headers={"X-Forwarded-Proto": "https"},
+        )
+        is True
+    )
 
 
 def test_is_https_request_forwarded_proto不一致は偽() -> None:
     """X-Forwarded-Proto が https 以外なら偽。"""
-    assert is_https_request(
-        request_scheme="http",
-        headers={"X-Forwarded-Proto": "http"},
-    ) is False
+    assert (
+        is_https_request(
+            request_scheme="http",
+            headers={"X-Forwarded-Proto": "http"},
+        )
+        is False
+    )
 
 
 def test_is_oauth_callback_path_既定パスは真() -> None:

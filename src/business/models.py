@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 class ReportStatus(Enum):
     """日報状態"""
+
     DRAFT = "draft"  # 下書き
     SUBMITTED = "submitted"  # 提出済み
     APPROVED = "approved"  # 承認済み
@@ -21,6 +22,7 @@ class ReportStatus(Enum):
 @dataclass(frozen=True)
 class DailyReport:
     """日報"""
+
     employee_id: str
     date: datetime
     content: str
@@ -41,6 +43,7 @@ class DailyReport:
 @dataclass(frozen=True)
 class SalesRecord:
     """売上記録"""
+
     record_id: str
     date: datetime
     amount: Decimal
@@ -61,6 +64,7 @@ class SalesRecord:
 @dataclass(frozen=True)
 class LaborCost:
     """人件費"""
+
     employee_id: str
     period_start: datetime
     period_end: datetime

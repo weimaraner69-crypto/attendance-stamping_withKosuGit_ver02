@@ -10,6 +10,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class User:
     """ユーザー情報（個人情報は含まない）"""
+
     user_id: str
     username: str
     role: str

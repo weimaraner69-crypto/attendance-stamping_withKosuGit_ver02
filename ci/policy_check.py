@@ -97,7 +97,7 @@ PERSONAL_INFO_PATTERNS: list[str] = [
     # 電話番号のログ出力（日本の電話番号形式）
     r'(logger\.(info|debug|warning|error)|print)\s*\([^)]*["\'].*\d{2,4}-\d{2,4}-\d{4}.*["\']',
     # 平文パスワードのログ出力
-    r'(logger\.(info|debug|warning|error)|print)\s*\([^)]*password[^)]*\)',
+    r"(logger\.(info|debug|warning|error)|print)\s*\([^)]*password[^)]*\)",
 ]
 
 # URL パターン（コード中の外部 URL 直書きを検出）
@@ -184,9 +184,7 @@ def should_skip_secret_pattern(path: Path, pattern: str) -> bool:
     """ファイル種別に応じて秘密情報パターン検査を除外する。"""
     rel = path.relative_to(REPO_ROOT).as_posix()
 
-    is_password_assignment_pattern = (
-        "password\\s*=\\s*" in pattern or "passwd\\s*=\\s*" in pattern
-    )
+    is_password_assignment_pattern = "password\\s*=\\s*" in pattern or "passwd\\s*=\\s*" in pattern
     if is_password_assignment_pattern:
         if rel.startswith("tests/"):
             return True
