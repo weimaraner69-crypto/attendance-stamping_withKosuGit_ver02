@@ -266,6 +266,7 @@ jobs:
                               f"- 実装担当候補: {implementer_candidate}",
                               f"- レビュー担当候補: {reviewer_candidate}",
                               "- action: assignee を設定し、対応方針をIssueへ追記してください。",
+                              "- note: docs/sec-triage-spec-freeze.md を変更した場合は変更履歴の版番号増分を確認してください",
                               "",
                               signature,
                           ]
