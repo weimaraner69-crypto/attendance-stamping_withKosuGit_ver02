@@ -381,8 +381,14 @@ def _parse_priority_threshold_overrides(value: str | None) -> dict[str, float]:
                 "CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES のdirectiveが不正です"
             )
 
+        normalized_threshold_text = threshold_text.strip()
+        if not normalized_threshold_text:
+            raise ValueError(
+                "CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES の閾値が不正です"
+            )
+
         threshold_value = _parse_positive_float(
-            threshold_text.strip(),
+            normalized_threshold_text,
             default=1.0,
             setting_name="CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES",
         )

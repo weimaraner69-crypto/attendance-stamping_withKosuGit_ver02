@@ -512,6 +512,7 @@
 	- 反映: `should_bypass_csp_spike_alert_cooldown`（`src/shared/csp_report.py`）を追加し、高増加率（`CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD`）時はクールダウン抑制を解除
 	- 反映: クールダウン解除時の監査ログ（`csp_spike_alert_cooldown_bypassed`）を追加し、優先通知の発火理由を監査可能化
 	- 反映: `CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES` を追加し、directive別の優先通知閾値上書きでクールダウン解除判定を調整可能化
+	- 反映: `CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES` の値未指定（例: `script-src-elem=`）を設定エラーとして扱い、誤設定時のサイレント動作を防止
 	- 反映: `SecurityRuntimeConfig` に `security_headers` を追加し、環境変数でヘッダー/CSPポリシーを制御可能化
 	- 追加: SEC-010設定・接続テスト（`tests/test_security_config.py`, `tests/test_api_handlers.py`, `tests/test_auth_endpoints.py`, `tests/test_http_response_adapter.py`, `tests/test_fastapi_response_adapter.py`, `tests/test_fastapi_app.py`, `tests/test_csp_report.py`）
 	- 次アクション:
@@ -567,6 +568,7 @@
 	- SEC-010CSP通知クールダウン抑制追加後の回帰: `./.venv/bin/python -m pytest tests/test_csp_report.py tests/test_fastapi_app.py` → 20 passed / 11 skipped
 	- SEC-010CSP優先通知（高増加率で抑制解除）追加後の回帰: `./.venv/bin/python -m pytest tests/test_csp_report.py tests/test_fastapi_app.py` → 25 passed / 12 skipped
 	- SEC-010CSP優先通知（directive別閾値上書き）追加後の回帰: `./.venv/bin/python -m pytest tests/test_csp_report.py tests/test_fastapi_app.py` → 30 passed / 13 skipped
+	- SEC-010CSP優先通知（override設定厳格化）追加後の回帰: `./.venv/bin/python -m pytest tests/test_csp_report.py tests/test_fastapi_app.py` → 31 passed / 13 skipped
 	- SEC-011セキュリティ回帰テスト追加後の回帰: `./.venv/bin/python -m pytest tests/test_security_regression.py` → 6 passed
 	- SEC-003共通エラーハンドラ追加後の回帰: `./.venv/bin/python -m pytest tests/test_error_handling.py tests/test_api_auth.py tests/test_api_handlers.py` → 24 passed
 
