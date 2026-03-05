@@ -107,6 +107,7 @@ jobs:
                               "title": issue["title"],
                               "state": issue["state"],
                               "html_url": issue["html_url"],
+                              "author_login": (issue.get("user") or {}).get("login"),
                               "created_at": issue["created_at"],
                           }
                           for issue in unassigned_items.get("items", [])
@@ -199,6 +200,7 @@ jobs:
               env:
                   GH_TOKEN: ${{ github.token }}
                   REPOSITORY: ${{ github.repository }}
+                  REPOSITORY_OWNER: ${{ github.repository_owner }}
                   RESULT_PATH: ${{ env.RESULT_PATH }}
                   REPORT_DAYS: ${{ env.REPORT_DAYS }}
               run: |
@@ -219,6 +221,7 @@ jobs:
                       raise SystemExit(0)
 
                   repository = os.environ["REPOSITORY"]
+                  repository_owner = os.environ["REPOSITORY_OWNER"]
                   report_days = os.environ["REPORT_DAYS"]
                   threshold = data["unassigned_alert_threshold"]
                   count = data["unassigned_open_count"]
@@ -230,6 +233,9 @@ jobs:
 
                   for issue in data.get("unassigned_sample_issues", []):
                       issue_number = issue["number"]
+                      author_login = issue.get("author_login") or ""
+                      implementer_candidate = f"@{author_login}" if author_login else "(未取得)"
+                      reviewer_candidate = f"@{repository_owner}" if repository_owner else "(未設定)"
 
                       comments_response = subprocess.run(
                           [
@@ -256,6 +262,8 @@ jobs:
                               f"- report_days: {report_days}",
                               f"- unassigned_open_count: {count}",
                               f"- threshold: {threshold}",
+                              f"- 実装担当候補: {implementer_candidate}",
+                              f"- レビュー担当候補: {reviewer_candidate}",
                               "- action: assignee を設定し、対応方針をIssueへ追記してください。",
                               "",
                               signature,
