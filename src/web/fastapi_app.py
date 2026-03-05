@@ -7,8 +7,13 @@ from typing import Any
 
 from business.api import export_sales_data
 from shared.api_handlers import ApiResponse
+from shared.audit import SqlAlchemyAuditLogWriter
 from shared.auth import AuthContext
+from shared.csp_report import SqlAlchemyCspReportWriter, persist_csp_report
 from shared.csrf import CSRF_COOKIE_NAME, CSRF_HEADER_NAME
+from shared.database import init_db
+from shared.database.connection import get_session_factory
+from shared.error_handling import PUBLIC_INTERNAL_ERROR_MESSAGE, log_internal_error
 from shared.fastapi_response_adapter import adapt_api_response_to_fastapi
 from shared.security import sanitize_input
 
@@ -100,6 +105,27 @@ def _sanitize_csp_report_payload(payload: Any) -> dict[str, Any]:
     return sanitized_report
 
 
+def _persist_csp_report_to_database(sanitized_report: dict[str, Any]) -> int:
+    """CSPレポートをDBへ永続化し、監査ログへ記録する。"""
+    try:
+        session_factory = get_session_factory()
+    except RuntimeError:
+        init_db()
+        session_factory = get_session_factory()
+
+    with session_factory() as session:
+        csp_report_writer = SqlAlchemyCspReportWriter(session=session, auto_commit=False)
+        audit_log_writer = SqlAlchemyAuditLogWriter(session=session, auto_commit=False)
+        row_id = persist_csp_report(
+            report=sanitized_report,
+            csp_report_writer=csp_report_writer,
+            audit_log_writer=audit_log_writer,
+        )
+        session.commit()
+
+    return row_id
+
+
 def create_fastapi_app() -> Any:
     """FastAPI アプリを生成する。"""
     if not _is_fastapi_available():
@@ -144,22 +170,38 @@ def create_fastapi_app() -> Any:
         try:
             payload = await request.json()
             sanitized_report = _sanitize_csp_report_payload(payload)
+            persisted_id = _persist_csp_report_to_database(sanitized_report)
             api_response = ApiResponse(
                 status_code=200,
                 body={
                     "ok": True,
                     "data": {
                         "accepted": True,
+                        "persisted_id": persisted_id,
                         "report_fields": sorted(sanitized_report.keys()),
                     },
                 },
             )
-        except Exception:
+        except ValueError:
             api_response = ApiResponse(
                 status_code=400,
                 body={
                     "ok": False,
                     "error": "不正なリクエストです",
+                },
+            )
+        except Exception as error:
+            log_internal_error(
+                error,
+                context={
+                    "component": "csp_report_handler",
+                },
+            )
+            api_response = ApiResponse(
+                status_code=500,
+                body={
+                    "ok": False,
+                    "error": PUBLIC_INTERNAL_ERROR_MESSAGE,
                 },
             )
 

@@ -123,6 +123,8 @@ def test_create_fastapi_app_cspレポートを受信できる() -> None:
     assert response.status_code == 200
     assert response.json()["ok"] is True
     assert response.json()["data"]["accepted"] is True
+    assert isinstance(response.json()["data"]["persisted_id"], int)
+    assert response.json()["data"]["persisted_id"] > 0
     assert response.json()["data"]["report_fields"] == [
         "blocked-uri",
         "document-uri",

@@ -1,0 +1,133 @@
+"""CSP違反レポート永続化のテスト。"""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from shared.audit import InMemoryAuditLogWriter
+from shared.csp_report import (
+    SqlAlchemyCspReportWriter,
+    build_csp_report_entry,
+    persist_csp_report,
+)
+from shared.database import Base
+from shared.tables import CspReportTable
+
+
+def test_build_csp_report_entry_正常系() -> None:
+    """サニタイズ済み辞書から永続化エントリを生成できる。"""
+    report = {
+        "document-uri": "https://example.com/report",
+        "violated-directive": "script-src-elem",
+        "effective-directive": "script-src",
+        "blocked-uri": "https://cdn.example.com/lib.js",
+        "original-policy": "default-src 'self'; report-uri /csp-report",
+        "disposition": "report",
+        "referrer": "https://example.com",
+        "status-code": 200,
+    }
+
+    entry = build_csp_report_entry(report)
+
+    assert entry.document_uri == "https://example.com/report"
+    assert entry.violated_directive == "script-src-elem"
+    assert entry.effective_directive == "script-src"
+    assert entry.blocked_uri == "https://cdn.example.com/lib.js"
+    assert entry.status_code == 200
+
+
+def test_sqlalchemy_csp_report_writer_永続化できる() -> None:
+    """SQLAlchemyライタでCSPレポートを永続化できる。"""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+
+    with Session(engine) as session:
+        writer = SqlAlchemyCspReportWriter(session=session, auto_commit=True)
+        persisted_id = writer.write(
+            build_csp_report_entry(
+                {
+                    "document-uri": "https://example.com/report",
+                    "violated-directive": "script-src-elem",
+                    "effective-directive": "script-src",
+                    "blocked-uri": "https://cdn.example.com/lib.js",
+                    "original-policy": "default-src 'self'; report-uri /csp-report",
+                    "status-code": 200,
+                }
+            )
+        )
+
+    with Session(engine) as session:
+        rows = session.query(CspReportTable).all()
+
+    assert persisted_id > 0
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.document_uri == "https://example.com/report"
+    assert row.violated_directive == "script-src-elem"
+    assert row.status_code == 200
+    assert json.loads(str(row.report_json))["effective-directive"] == "script-src"
+
+
+def test_persist_csp_report_監査ログ連携できる() -> None:
+    """永続化成功時に監査ログへ成功結果を記録する。"""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+
+    with Session(engine) as session:
+        csp_writer = SqlAlchemyCspReportWriter(session=session, auto_commit=False)
+        audit_writer = InMemoryAuditLogWriter()
+
+        persisted_id = persist_csp_report(
+            report={
+                "document-uri": "https://example.com/report",
+                "violated-directive": "script-src-elem",
+                "effective-directive": "script-src",
+                "blocked-uri": "https://cdn.example.com/lib.js",
+                "original-policy": "default-src 'self'; report-uri /csp-report",
+                "status-code": 200,
+            },
+            csp_report_writer=csp_writer,
+            audit_log_writer=audit_writer,
+        )
+        session.commit()
+
+    assert persisted_id > 0
+    assert len(audit_writer.entries) == 1
+    entry = audit_writer.entries[0]
+    assert entry.resource == "security"
+    assert entry.action == "csp_report_ingest"
+    assert entry.result == "success"
+    assert entry.target_resource_id == str(persisted_id)
+
+
+def test_persist_csp_report_永続化失敗時は監査ログ失敗を記録() -> None:
+    """永続化失敗時は監査ログへ failure を記録して例外送出する。"""
+
+    class FailingCspReportWriter:
+        """常に失敗するテスト用ライタ。"""
+
+        def write(self, _: object) -> int:
+            raise RuntimeError("db unavailable")
+
+    audit_writer = InMemoryAuditLogWriter()
+
+    with pytest.raises(RuntimeError, match="db unavailable"):
+        persist_csp_report(
+            report={
+                "document-uri": "https://example.com/report",
+                "violated-directive": "script-src-elem",
+            },
+            csp_report_writer=FailingCspReportWriter(),
+            audit_log_writer=audit_writer,
+        )
+
+    assert len(audit_writer.entries) == 1
+    entry = audit_writer.entries[0]
+    assert entry.resource == "security"
+    assert entry.action == "csp_report_ingest"
+    assert entry.result == "failure"
+    assert entry.error_type == "RuntimeError"
