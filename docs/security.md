@@ -224,6 +224,43 @@ def require_role(user: User, required_role: str) -> None:
 - 詳細な例外情報は内部ログのみに記録し、運用担当者のみが参照できるようにする
 - ログ出力時も機微情報（個人情報・トークン・パスワード等）は記録しない
 
+### CSP違反通知の運用設定（SEC-010）
+
+`GET /csp-report/summary` の急増通知は、以下の環境変数で運用調整する。
+
+- `CSP_SPIKE_ALERT_WEBHOOK_URL`
+    - 通知先Webhook URL。未設定時は通知機能を無効化する。
+- `CSP_SPIKE_ALERT_BEARER_TOKEN`
+    - Webhook認証トークン（任意）。**コミット禁止**、ローカル `.env` またはシークレットストアのみで管理する。
+- `CSP_SPIKE_ALERT_TIMEOUT_SECONDS`（既定: `3.0`）
+    - Webhook送信タイムアウト秒。
+- `CSP_SPIKE_ALERT_MAX_RETRIES`（既定: `2`）
+    - 送信失敗時の再送回数。
+- `CSP_SPIKE_ALERT_RETRY_BACKOFF_SECONDS`（既定: `0.5`）
+    - 指数バックオフの初期待機秒。
+- `CSP_SPIKE_ALERT_COOLDOWN_MINUTES`（既定: `30`）
+    - 同一directiveの再通知を抑制するクールダウン分。
+- `CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD`（既定: `5.0`）
+    - 高増加率時にクールダウン抑制を解除する基準比率。
+- `CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES`（任意）
+    - directive別の上書き閾値。形式は `directive=ratio,directive=ratio`。
+    - 例: `script-src-elem=2.5,img-src=4.0`
+    - `script-src-elem=` のような**値未指定は設定エラー**として扱う（サイレント誤設定防止）。
+
+推奨初期値（MVP運用開始時）：
+
+```bash
+CSP_SPIKE_ALERT_COOLDOWN_MINUTES=60
+CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD=8.0
+CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES=script-src-elem=3.0,style-src=4.0,img-src=6.0
+```
+
+運用ルール（最小）：
+
+- 初期2週間は上記推奨値で運用し、通知頻度と誤検知率を確認してから段階調整する。
+- しきい値の変更は「変更日時・変更者・目的」を監査ログ運用記録へ残す。
+- トークン・Webhook URL をログへ出力しない（マスク運用を維持する）。
+
 ## 入力検証
 
 ### サニタイゼーション
