@@ -14,6 +14,7 @@
   - [2. テストの実行](#docs-spec-06)
   - [3. セキュリティチェック](#docs-spec-07)
 - [開発](#docs-spec-08)
+- [セキュリティガイド](security.md)
 - [ライセンス](#docs-spec-09)
 
 <a id="docs-spec-01"></a>
