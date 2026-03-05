@@ -517,6 +517,7 @@
 	- 追加: SEC-010設定・接続テスト（`tests/test_security_config.py`, `tests/test_api_handlers.py`, `tests/test_auth_endpoints.py`, `tests/test_http_response_adapter.py`, `tests/test_fastapi_response_adapter.py`, `tests/test_fastapi_app.py`, `tests/test_csp_report.py`）
 	- 次アクション:
 		- `/business/sales/export` 以外の業務APIへ段階的にルーターを拡張し、通知結果の運用監視（Slack連携/優先通知閾値チューニング）を追加する
+		- CSP通知設定を変更する際は `docs/security.md` と `.env.example` の推奨値・サンプル値を同一PRで同期する
 
 - SEC-011 セキュリティテスト整備: 完了（現行構成）
 	- 状態: 主要防御機能（401/403/CSRF/Cookie属性/ログインロック/監査マスキング）の回帰テストを追加
