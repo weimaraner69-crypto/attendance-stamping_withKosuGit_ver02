@@ -194,6 +194,41 @@ def should_skip_secret_pattern(path: Path, pattern: str) -> bool:
     return False
 
 
+def _is_sensitive_env_key(key: str) -> bool:
+    """.env 系で機密値になりうるキーか判定する。"""
+    normalized = key.strip().upper()
+    sensitive_tokens = ("TOKEN", "SECRET", "PASSWORD", "PASSWD", "API_KEY")
+    return any(token in normalized for token in sensitive_tokens)
+
+
+def scan_env_example_for_secrets(path: Path) -> list[str]:
+    """.env.example に機密値が直接記載されていないか確認する。"""
+    issues: list[str] = []
+    text = read_text_safely(path)
+    if text is None:
+        return issues
+
+    rel = path.relative_to(REPO_ROOT)
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if "=" not in stripped:
+            continue
+
+        key, value = stripped.split("=", 1)
+        if not _is_sensitive_env_key(key):
+            continue
+
+        if value.strip():
+            issues.append(
+                "秘密情報疑い: .env.example の機密キーに値が設定されています "
+                f"({key.strip()}) in {rel}:{lineno}"
+            )
+
+    return issues
+
+
 # ---------------------------------------------------------------------------
 # スキャン
 # ---------------------------------------------------------------------------
@@ -258,6 +293,11 @@ def main() -> int:
         issues.append(
             "禁止: .env がリポジトリにコミットされています。削除し、gitignore 対象にしてください。"
         )
+
+    # .env.example の機密キー値が空であることを確認
+    env_example_path = REPO_ROOT / ".env.example"
+    if env_example_path.exists():
+        issues.extend(scan_env_example_for_secrets(env_example_path))
 
     # 対象ファイルのスキャン
     for root in SCAN_DIRS:
