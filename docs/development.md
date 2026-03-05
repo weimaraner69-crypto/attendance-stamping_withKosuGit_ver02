@@ -176,8 +176,10 @@ SEC-011 security-regression 失敗対応
 
 - `.github/workflows/security-issue-triage-report.yml` は週次実行でSEC系Issueのトリアージ結果を集計する。
 - Step Summary へ件数（total/open/closed/assigned/unassigned）を出力し、同内容をArtifactとして保存する。
-- 未アサインの open Issue は警告セクション（max 10）としてStep Summary先頭で優先表示する。
+- 未アサインの open Issue は `unassigned_alert_threshold`（既定3）以上のときのみ警告見出しで強調表示する。
+- 未アサインの open Issue 一覧（max 10）はStep Summary先頭に出力する。
 - 手動実行時は `report_days` 入力で集計期間を指定できる。
+- 手動実行時は `unassigned_alert_threshold` 入力で警告しきい値を指定できる。
 - 定期実行の既定期間は7日（`workflow_dispatch` 未指定時も同値）とする。
 
 ## 環境変数設定

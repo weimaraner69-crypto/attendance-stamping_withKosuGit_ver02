@@ -9,6 +9,10 @@ on:
                 description: "集計対象の日数（過去N日）"
                 required: false
                 default: "7"
+            unassigned_alert_threshold:
+                description: "未アサインopen件数の警告しきい値"
+                required: false
+                default: "3"
 
 permissions:
     issues: read
@@ -25,6 +29,7 @@ jobs:
 
         env:
             REPORT_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.report_days || '7' }}
+            UNASSIGNED_ALERT_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.unassigned_alert_threshold || '3' }}
             RESULT_PATH: /tmp/security-issue-triage-report.json
 
         steps:
@@ -33,6 +38,7 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
                   REPOSITORY: ${{ github.repository }}
                   REPORT_DAYS: ${{ env.REPORT_DAYS }}
+                  UNASSIGNED_ALERT_THRESHOLD: ${{ env.UNASSIGNED_ALERT_THRESHOLD }}
                   RESULT_PATH: ${{ env.RESULT_PATH }}
               run: |
                   python - <<'PY'
@@ -44,6 +50,7 @@ jobs:
 
                   repository = os.environ["REPOSITORY"]
                   report_days = int(os.environ["REPORT_DAYS"])
+                  unassigned_alert_threshold = int(os.environ["UNASSIGNED_ALERT_THRESHOLD"])
                   result_path = Path(os.environ["RESULT_PATH"])
 
                   since_date = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=report_days)).strftime("%Y-%m-%d")
@@ -62,6 +69,7 @@ jobs:
                   open_count = int(search_issues(f"{base_query} is:open")["total_count"])
                   closed_count = int(search_issues(f"{base_query} is:closed")["total_count"])
                   unassigned_count = int(search_issues(f"{base_query} no:assignee")["total_count"])
+                  unassigned_open_count = int(search_issues(f"{base_query} is:open no:assignee")["total_count"])
                   assigned_count = total - unassigned_count
                   items = search_issues(f"{base_query} sort:created-desc", per_page=20)
                   unassigned_items = search_issues(f"{base_query} is:open no:assignee sort:created-desc", per_page=10)
@@ -75,6 +83,9 @@ jobs:
                       "closed_count": closed_count,
                       "assigned_count": assigned_count,
                       "unassigned_count": unassigned_count,
+                      "unassigned_open_count": unassigned_open_count,
+                      "unassigned_alert_threshold": unassigned_alert_threshold,
+                      "unassigned_alert_exceeded": unassigned_open_count >= unassigned_alert_threshold,
                       "sample_issues": [
                           {
                               "number": issue["number"],
@@ -134,9 +145,19 @@ jobs:
                       f"- closed_count: {data['closed_count']}",
                       f"- assigned_count: {data['assigned_count']}",
                       f"- unassigned_count: {data['unassigned_count']}",
+                      f"- unassigned_open_count: {data['unassigned_open_count']}",
+                      f"- unassigned_alert_threshold: {data['unassigned_alert_threshold']}",
                       "",
-                      "### ⚠️ Unassigned Open Issues (max 10)",
                   ]
+
+                  if data.get("unassigned_alert_exceeded"):
+                      lines.append(
+                          f"### 🚨 Unassigned Open Issues Alert (threshold={data['unassigned_alert_threshold']}, count={data['unassigned_open_count']})"
+                      )
+                  else:
+                      lines.append(
+                          f"### Unassigned Open Issues (threshold={data['unassigned_alert_threshold']}, count={data['unassigned_open_count']})"
+                      )
 
                   unassigned_issues = data.get("unassigned_sample_issues", [])
                   if not unassigned_issues:
@@ -151,7 +172,7 @@ jobs:
                   lines.extend(
                       [
                           "",
-                      "### Sample Issues (max 20)",
+                          "### Sample Issues (max 20)",
                       ]
                   )
 
