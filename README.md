@@ -526,6 +526,7 @@
 	- 反映: `.github/workflows/ci.yml` に `security-regression` ジョブを追加し、セキュリティ回帰テスト群（`tests/test_security_regression.py`, `tests/test_csrf.py`, `tests/test_login_protection.py`, `tests/test_security_config.py`）を明示実行
 	- 反映: `security-regression` 失敗時に（`pull_request` イベント）PRへ自動コメントを投稿し、Step Summary に運用確認手順を出力
 	- 反映: PRコメント通知を一次対応フローへ組み込み、担当者アサイン・再実行判断の運用手順を `docs/security.md` に確定
+	- 反映: 担当ロール別チェックリスト（実装担当 / セキュリティ担当 / マージ担当）を `docs/development.md` のSEC-011運用Runbookとして整備
 
 - SEC-003 共通エラーハンドラ実装: 完了（現行構成）
 	- 状態: 利用者向け一般化メッセージと内部ログ向け詳細分離、機微情報マスキングを共通化
