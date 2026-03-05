@@ -299,6 +299,7 @@ def should_bypass_csp_spike_alert_cooldown(
     *,
     summary: Mapping[str, Any],
     priority_increase_ratio_threshold: float,
+    directive_priority_threshold_overrides: Mapping[str, float] | None = None,
 ) -> bool:
     """増加率が閾値以上ならクールダウン抑制を解除する。"""
     if priority_increase_ratio_threshold <= 0:
@@ -312,6 +313,18 @@ def should_bypass_csp_spike_alert_cooldown(
         if not isinstance(item, dict):
             continue
 
+        directive_name = item.get("directive")
+        if not isinstance(directive_name, str) or not directive_name:
+            continue
+
+        resolved_threshold = _resolve_priority_threshold_for_directive(
+            directive_name=directive_name,
+            default_threshold=priority_increase_ratio_threshold,
+            directive_priority_threshold_overrides=directive_priority_threshold_overrides,
+        )
+        if resolved_threshold <= 0:
+            continue
+
         recent_count = _to_float(item.get("recent_count"))
         baseline_daily_avg = _to_float(item.get("baseline_daily_avg"))
         if recent_count is None or recent_count <= 0:
@@ -322,7 +335,7 @@ def should_bypass_csp_spike_alert_cooldown(
         else:
             increase_ratio = recent_count / baseline_daily_avg
 
-        if increase_ratio >= priority_increase_ratio_threshold:
+        if increase_ratio >= resolved_threshold:
             return True
 
     return False
@@ -341,6 +354,70 @@ def get_csp_spike_alert_priority_increase_ratio_threshold_from_env(
     )
 
 
+def _parse_priority_threshold_overrides(value: str | None) -> dict[str, float]:
+    """directive別の優先通知閾値上書きを解析する。"""
+    if value is None:
+        return {}
+
+    normalized = value.strip()
+    if not normalized:
+        return {}
+
+    overrides: dict[str, float] = {}
+    for item in normalized.split(","):
+        pair = item.strip()
+        if not pair:
+            continue
+
+        directive, separator, threshold_text = pair.partition("=")
+        if separator != "=":
+            raise ValueError(
+                "CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES の形式が不正です"
+            )
+
+        directive_name = directive.strip().lower()
+        if not directive_name:
+            raise ValueError(
+                "CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES のdirectiveが不正です"
+            )
+
+        threshold_value = _parse_positive_float(
+            threshold_text.strip(),
+            default=1.0,
+            setting_name="CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES",
+        )
+        overrides[directive_name] = threshold_value
+
+    return overrides
+
+
+def get_csp_spike_alert_priority_increase_ratio_threshold_overrides_from_env(
+    *,
+    environ_get: Callable[[str], str | None] | None = None,
+) -> dict[str, float]:
+    """環境変数からdirective別優先通知閾値上書きを取得する。"""
+    get_value = environ_get or os.getenv
+    return _parse_priority_threshold_overrides(
+        get_value("CSP_SPIKE_ALERT_PRIORITY_INCREASE_RATIO_THRESHOLD_OVERRIDES")
+    )
+
+
+def _resolve_priority_threshold_for_directive(
+    *,
+    directive_name: str,
+    default_threshold: float,
+    directive_priority_threshold_overrides: Mapping[str, float] | None,
+) -> float:
+    """directiveごとの優先通知閾値を解決する。"""
+    if directive_priority_threshold_overrides is None:
+        return default_threshold
+
+    return directive_priority_threshold_overrides.get(
+        directive_name.strip().lower(),
+        default_threshold,
+    )
+
+
 def dispatch_csp_spike_alert(
     *,
     summary: Mapping[str, Any],
@@ -349,6 +426,7 @@ def dispatch_csp_spike_alert(
     session: Session | None = None,
     cooldown_minutes: int = 0,
     priority_increase_ratio_threshold: float = 0,
+    directive_priority_threshold_overrides: Mapping[str, float] | None = None,
     now: datetime | None = None,
 ) -> bool:
     """急増directiveが存在する場合のみ通知する。"""
@@ -371,6 +449,7 @@ def dispatch_csp_spike_alert(
     bypass_cooldown = should_bypass_csp_spike_alert_cooldown(
         summary=summary,
         priority_increase_ratio_threshold=priority_increase_ratio_threshold,
+        directive_priority_threshold_overrides=directive_priority_threshold_overrides,
     )
 
     if suppress_by_cooldown and not bypass_cooldown:
@@ -402,6 +481,9 @@ def dispatch_csp_spike_alert(
                 "spike_directives": ",".join(spike_directive_names),
                 "cooldown_minutes": str(cooldown_minutes),
                 "priority_increase_ratio_threshold": str(priority_increase_ratio_threshold),
+                "priority_override_count": str(
+                    len(directive_priority_threshold_overrides or {})
+                ),
             },
         )
 
