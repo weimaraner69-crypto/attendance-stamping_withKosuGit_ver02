@@ -498,10 +498,11 @@
 	- 反映: `adapt_api_response_to_http`（`src/shared/http_response_adapter.py`）で `ApiResponse.headers` / `set_cookies` のHTTP応答転写雛形を追加
 	- 反映: `adapt_api_response_to_fastapi`（`src/shared/fastapi_response_adapter.py`）で FastAPI `JSONResponse` への変換雛形を追加
 	- 反映: `create_fastapi_app`（`src/web/fastapi_app.py`）で最小ルーター（`GET /health`）を追加
+	- 反映: `create_fastapi_app`（`src/web/fastapi_app.py`）へ業務ルーター（`POST /business/sales/export`）を追加し、`export_sales_data`（`src/business/api.py`）へ接続
 	- 反映: `SecurityRuntimeConfig` に `security_headers` を追加し、環境変数でヘッダー/CSPポリシーを制御可能化
 	- 追加: SEC-010設定・接続テスト（`tests/test_security_config.py`, `tests/test_api_handlers.py`, `tests/test_auth_endpoints.py`, `tests/test_http_response_adapter.py`, `tests/test_fastapi_response_adapter.py`, `tests/test_fastapi_app.py`）
 	- 次アクション:
-		- `GET /health` 以外の業務APIへ段階的にルーターを拡張し、`/csp-report` 受信エンドポイントを接続する
+		- `/business/sales/export` 以外の業務APIへ段階的にルーターを拡張し、`/csp-report` 受信エンドポイントを接続する
 
 - SEC-011 セキュリティテスト整備: 完了（現行構成）
 	- 状態: 主要防御機能（401/403/CSRF/Cookie属性/ログインロック/監査マスキング）の回帰テストを追加
