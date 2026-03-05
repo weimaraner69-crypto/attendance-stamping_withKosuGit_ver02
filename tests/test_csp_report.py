@@ -17,10 +17,12 @@ from shared.csp_report import (
     create_csp_spike_alert_sender_from_env,
     dispatch_csp_spike_alert,
     get_csp_report_summary,
+    get_csp_spike_alert_cooldown_minutes_from_env,
     persist_csp_report,
+    should_suppress_csp_spike_alert,
 )
 from shared.database import Base
-from shared.tables import CspReportTable
+from shared.tables import AuditLogTable, CspReportTable
 
 
 def test_build_csp_report_entry_正常系() -> None:
@@ -493,6 +495,108 @@ def test_dispatch_csp_spike_alert_失敗時は監査ログへfailureを記録す
     assert entry.metadata["max_retries"] == "1"
 
 
+def test_should_suppress_csp_spike_alert_同一directiveは抑制する() -> None:
+    """同一directiveがクールダウン内に通知済みなら抑制する。"""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    now = datetime(2026, 3, 5, 12, 0, tzinfo=timezone.utc)
+
+    with Session(engine) as session:
+        session.add(
+            AuditLogTable(
+                actor_user_id="system",
+                actor_role="system",
+                resource="security",
+                action="csp_spike_alert_dispatch",
+                result="success",
+                occurred_at=now - timedelta(minutes=5),
+                metadata_json=json.dumps(
+                    {
+                        "spike_directives": "script-src-elem,img-src",
+                    }
+                ),
+            )
+        )
+        session.flush()
+
+        suppressed = should_suppress_csp_spike_alert(
+            session=session,
+            summary={
+                "spike_directives": [
+                    {"directive": "script-src-elem", "increase": 4.0},
+                ]
+            },
+            cooldown_minutes=30,
+            now=now,
+        )
+
+    assert suppressed is True
+
+
+def test_dispatch_csp_spike_alert_クールダウン中は送信抑制される() -> None:
+    """クールダウン中は送信せず抑制監査ログを残す。"""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    now = datetime(2026, 3, 5, 12, 0, tzinfo=timezone.utc)
+
+    with Session(engine) as session:
+        session.add(
+            AuditLogTable(
+                actor_user_id="system",
+                actor_role="system",
+                resource="security",
+                action="csp_spike_alert_dispatch",
+                result="success",
+                occurred_at=now - timedelta(minutes=3),
+                metadata_json=json.dumps({"spike_directives": "script-src-elem"}),
+            )
+        )
+        session.flush()
+
+        calls: list[dict[str, object]] = []
+        sender = CspSpikeAlertSender(
+            endpoint_url="https://hooks.example.com/csp",
+            transport=lambda endpoint_url, headers, body, timeout: calls.append(
+                {
+                    "endpoint_url": endpoint_url,
+                    "headers": headers,
+                    "body": body,
+                    "timeout": timeout,
+                }
+            ),
+        )
+        audit_writer = InMemoryAuditLogWriter()
+
+        dispatched = dispatch_csp_spike_alert(
+            summary={
+                "range_days": 7,
+                "total_reports": 20,
+                "spike_threshold": 2,
+                "spike_directives": [
+                    {
+                        "directive": "script-src-elem",
+                        "recent_count": 5,
+                        "baseline_daily_avg": 0.5,
+                        "increase": 4.5,
+                    }
+                ],
+            },
+            sender=sender,
+            audit_log_writer=audit_writer,
+            session=session,
+            cooldown_minutes=30,
+            now=now,
+        )
+
+    assert dispatched is False
+    assert calls == []
+    assert len(audit_writer.entries) == 1
+    entry = audit_writer.entries[0]
+    assert entry.action == "csp_spike_alert_suppressed"
+    assert entry.result == "success"
+    assert entry.metadata["cooldown_minutes"] == "30"
+
+
 def test_create_csp_spike_alert_sender_from_env_設定が無い場合はNone() -> None:
     """Webhook URL未設定時は送信設定を生成しない。"""
     sender = create_csp_spike_alert_sender_from_env(environ_get=lambda _: None)
@@ -528,3 +632,18 @@ def test_create_csp_spike_alert_sender_from_env_不正リトライ値は例外()
 
     with pytest.raises(ValueError, match="CSP_SPIKE_ALERT_MAX_RETRIES"):
         create_csp_spike_alert_sender_from_env(environ_get=env.get)
+
+
+def test_get_csp_spike_alert_cooldown_minutes_from_env_正常系() -> None:
+    """クールダウン分を環境変数から読み取れる。"""
+    env = {"CSP_SPIKE_ALERT_COOLDOWN_MINUTES": "45"}
+    value = get_csp_spike_alert_cooldown_minutes_from_env(environ_get=env.get)
+    assert value == 45
+
+
+def test_get_csp_spike_alert_cooldown_minutes_from_env_不正値は例外() -> None:
+    """クールダウン分が不正値なら例外を返す。"""
+    env = {"CSP_SPIKE_ALERT_COOLDOWN_MINUTES": "-1"}
+
+    with pytest.raises(ValueError, match="CSP_SPIKE_ALERT_COOLDOWN_MINUTES"):
+        get_csp_spike_alert_cooldown_minutes_from_env(environ_get=env.get)

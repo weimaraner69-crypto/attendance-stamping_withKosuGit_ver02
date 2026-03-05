@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session  # noqa: TC002
 
 from shared.audit import AuditLogWriter, write_audit_log
-from shared.tables import CspReportTable
+from shared.tables import AuditLogTable, CspReportTable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -177,15 +177,137 @@ def build_csp_spike_alert_payload(summary: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _extract_spike_directive_names(summary: Mapping[str, Any]) -> list[str]:
+    """集計結果から急増directive名を抽出する。"""
+    spikes = summary.get("spike_directives")
+    if not isinstance(spikes, list):
+        return []
+
+    names: list[str] = []
+    for item in spikes:
+        if not isinstance(item, dict):
+            continue
+        directive = item.get("directive")
+        if isinstance(directive, str) and directive:
+            names.append(directive)
+
+    return sorted(set(names))
+
+
+def _parse_directive_csv(value: str | None) -> set[str]:
+    """カンマ区切りdirective文字列を集合へ変換する。"""
+    if not value:
+        return set()
+    return {part.strip() for part in value.split(",") if part.strip()}
+
+
+def should_suppress_csp_spike_alert(
+    *,
+    session: Session,
+    summary: Mapping[str, Any],
+    cooldown_minutes: int,
+    now: datetime | None = None,
+) -> bool:
+    """同一directiveの直近成功通知がある場合に通知を抑制する。"""
+    if cooldown_minutes <= 0:
+        return False
+
+    current_directives = set(_extract_spike_directive_names(summary))
+    if len(current_directives) == 0:
+        return False
+
+    current = now or datetime.now(timezone.utc)  # noqa: UP017
+    since = current - timedelta(minutes=cooldown_minutes)
+
+    recent_success_rows = (
+        session.query(AuditLogTable.metadata_json)
+        .filter(
+            AuditLogTable.resource == "security",
+            AuditLogTable.action == "csp_spike_alert_dispatch",
+            AuditLogTable.result == "success",
+            AuditLogTable.occurred_at >= since,
+            AuditLogTable.occurred_at <= current,
+        )
+        .order_by(AuditLogTable.occurred_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    for (metadata_json,) in recent_success_rows:
+        if not isinstance(metadata_json, str) or not metadata_json:
+            continue
+
+        try:
+            metadata = json.loads(metadata_json)
+        except json.JSONDecodeError:
+            continue
+
+        if not isinstance(metadata, dict):
+            continue
+
+        previous_directives = _parse_directive_csv(
+            metadata.get("spike_directives")
+            if isinstance(metadata.get("spike_directives"), str)
+            else None
+        )
+        if len(current_directives.intersection(previous_directives)) > 0:
+            return True
+
+    return False
+
+
+def get_csp_spike_alert_cooldown_minutes_from_env(
+    *,
+    environ_get: Callable[[str], str | None] | None = None,
+) -> int:
+    """環境変数からCSP通知クールダウン分を取得する。"""
+    get_value = environ_get or os.getenv
+    return _parse_non_negative_int(
+        get_value("CSP_SPIKE_ALERT_COOLDOWN_MINUTES"),
+        default=30,
+        setting_name="CSP_SPIKE_ALERT_COOLDOWN_MINUTES",
+    )
+
+
 def dispatch_csp_spike_alert(
     *,
     summary: Mapping[str, Any],
     sender: CspSpikeAlertSender,
     audit_log_writer: AuditLogWriter | None = None,
+    session: Session | None = None,
+    cooldown_minutes: int = 0,
+    now: datetime | None = None,
 ) -> bool:
     """急増directiveが存在する場合のみ通知する。"""
     spikes = summary.get("spike_directives")
     if not isinstance(spikes, list) or len(spikes) == 0:
+        return False
+
+    spike_directive_names = _extract_spike_directive_names(summary)
+
+    if (
+        session is not None
+        and cooldown_minutes > 0
+        and should_suppress_csp_spike_alert(
+            session=session,
+            summary=summary,
+            cooldown_minutes=cooldown_minutes,
+            now=now,
+        )
+    ):
+        write_audit_log(
+            writer=audit_log_writer,
+            actor_user_id="system",
+            actor_role="system",
+            resource="security",
+            action="csp_spike_alert_suppressed",
+            result="success",
+            metadata={
+                "spike_directive_count": str(len(spike_directive_names)),
+                "spike_directives": ",".join(spike_directive_names),
+                "cooldown_minutes": str(cooldown_minutes),
+            },
+        )
         return False
 
     payload = build_csp_spike_alert_payload(summary)
@@ -201,6 +323,7 @@ def dispatch_csp_spike_alert(
             result="success",
             metadata={
                 "spike_directive_count": str(len(spikes)),
+                "spike_directives": ",".join(spike_directive_names),
                 "attempt_count": str(attempt_count),
                 "max_retries": str(sender.max_retries),
             },
@@ -217,6 +340,7 @@ def dispatch_csp_spike_alert(
             error_type=type(error).__name__,
             metadata={
                 "spike_directive_count": str(len(spikes)),
+                "spike_directives": ",".join(spike_directive_names),
                 "max_retries": str(sender.max_retries),
             },
         )

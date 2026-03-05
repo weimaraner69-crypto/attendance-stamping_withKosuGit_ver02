@@ -312,6 +312,56 @@ def test_create_fastapi_app_cspレポート集計_通知失敗時も200を返す
     assert response.json()["data"]["alert_dispatched"] is False
 
 
+def test_create_fastapi_app_cspレポート集計_同一directiveはクールダウン抑制(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """同一directive通知はクールダウン内で2回目を抑制する。"""
+    if not _is_fastapi_available():
+        pytest.skip("fastapi 未導入のためスキップ")
+
+    from fastapi.testclient import TestClient  # type: ignore[import-not-found]
+
+    sent_payloads: list[dict[str, object]] = []
+
+    sender = CspSpikeAlertSender(
+        endpoint_url="https://hooks.example.com/csp",
+        transport=lambda _endpoint_url, _headers, body, _timeout: sent_payloads.append(
+            json.loads(body.decode("utf-8"))
+        ),
+        sleeper=lambda _: None,
+    )
+
+    monkeypatch.setattr("web.fastapi_app.create_csp_spike_alert_sender_from_env", lambda: sender)
+    monkeypatch.setattr("web.fastapi_app.get_csp_spike_alert_cooldown_minutes_from_env", lambda: 60)
+
+    app = create_fastapi_app()
+    client = TestClient(app)
+
+    client.post(
+        "/csp-report",
+        json={
+            "csp-report": {
+                "document-uri": "https://example.com/cooldown-1",
+                "violated-directive": "script-src-elem",
+                "effective-directive": "script-src",
+                "status-code": 200,
+            }
+        },
+    )
+
+    first = client.get("/csp-report/summary?days=30&top=5&spike_threshold=1")
+    second = client.get("/csp-report/summary?days=30&top=5&spike_threshold=1")
+
+    assert first.status_code == 200
+    assert first.json()["ok"] is True
+    assert first.json()["data"]["alert_dispatched"] is True
+
+    assert second.status_code == 200
+    assert second.json()["ok"] is True
+    assert second.json()["data"]["alert_dispatched"] is False
+    assert len(sent_payloads) == 1
+
+
 def test_create_fastapi_app_cspレポート集計_不正クエリは400() -> None:
     """集計APIで不正クエリパラメータは400を返す。"""
     if not _is_fastapi_available():
