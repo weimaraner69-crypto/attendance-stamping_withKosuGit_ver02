@@ -152,6 +152,7 @@ jobs:
                       f"- unassigned_count: {data['unassigned_count']}",
                       f"- unassigned_open_count: {data['unassigned_open_count']}",
                       f"- unassigned_alert_threshold: {data['unassigned_alert_threshold']}",
+                      "- note: docs/sec-triage-spec-freeze.md を変更した場合は変更履歴の版番号増分を確認してください",
                       "",
                   ]
 
