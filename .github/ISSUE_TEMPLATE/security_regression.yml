@@ -1,0 +1,77 @@
+name: "SEC-011失敗対応（Security Regression）"
+description: "security-regression ジョブ失敗時の一次対応記録"
+title: "[SEC-011] "
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        security-regression 失敗時の記録テンプレートです。
+        秘密情報（トークン・個人情報・実データ）は記載しないでください。
+  - type: input
+    id: run_url
+    attributes:
+      label: "失敗ジョブURL"
+      description: "PRコメントまたはActions画面の run URL"
+      placeholder: "https://github.com/<org>/<repo>/actions/runs/<id>"
+    validations:
+      required: true
+  - type: textarea
+    id: failed_tests
+    attributes:
+      label: "失敗テスト"
+      description: "失敗したテスト名と失敗概要"
+      placeholder: |
+        - tests/test_security_regression.py::test_xxx
+        - tests/test_csrf.py::test_yyy
+    validations:
+      required: true
+  - type: dropdown
+    id: cause_category
+    attributes:
+      label: "原因分類"
+      description: "最も近い分類を選択"
+      options:
+        - "仕様差分"
+        - "実装不備"
+        - "一時要因"
+    validations:
+      required: true
+  - type: textarea
+    id: action_taken
+    attributes:
+      label: "対応内容"
+      description: "実施した修正・確認内容"
+    validations:
+      required: true
+  - type: dropdown
+    id: rerun
+    attributes:
+      label: "再実行有無"
+      description: "一時要因が明確な場合のみ再実行（1回まで）"
+      options:
+        - "実施"
+        - "未実施"
+    validations:
+      required: true
+  - type: textarea
+    id: rerun_reason
+    attributes:
+      label: "再実行判断理由"
+      description: "実施/未実施の理由"
+    validations:
+      required: true
+  - type: textarea
+    id: prevention_note
+    attributes:
+      label: "再発防止メモ"
+      description: "再発防止の観点・追加タスク"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "証跡リンク"
+      description: "PR / コミット / テスト結果など"
+    validations:
+      required: false

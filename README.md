@@ -528,6 +528,7 @@
 	- 反映: PRコメント通知を一次対応フローへ組み込み、担当者アサイン・再実行判断の運用手順を `docs/security.md` に確定
 	- 反映: 担当ロール別チェックリスト（実装担当 / セキュリティ担当 / マージ担当）を `docs/development.md` のSEC-011運用Runbookとして整備
 	- 反映: SEC-011失敗時のPRコメント雛形（原因 / 対応 / 再発防止）を `docs/development.md` に追加
+	- 反映: SEC-011失敗対応Issueテンプレート（`.github/ISSUE_TEMPLATE/security_regression.yml`）を追加し、運用入力を統一
 
 - SEC-003 共通エラーハンドラ実装: 完了（現行構成）
 	- 状態: 利用者向け一般化メッセージと内部ログ向け詳細分離、機微情報マスキングを共通化
